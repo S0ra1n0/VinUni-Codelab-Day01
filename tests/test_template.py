@@ -27,6 +27,8 @@ def _load_module(path: Path, unique_name: str):
     if not path.exists():
         raise FileNotFoundError(f"Target file not found at: {path}")
     spec = importlib.util.spec_from_file_location(unique_name, str(path))
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load module from: {path}")
     mod = importlib.util.module_from_spec(spec)
     sys.modules[unique_name] = mod
     spec.loader.exec_module(mod)
@@ -207,7 +209,7 @@ class TestBatchCompareAndFormat(unittest.TestCase):
 
     def test_batch_runs_and_formats_table(self):
         with patch.object(_m, "compare_models") as mock_comp:
-            def _get_mock():
+            def _get_mock(*args, **kwargs):
                 return {
                     "gpt4o": {"response": "GPT-4o response content here", "latency": 0.5, "cost": 0.00045, "input_tokens": 10, "output_tokens": 20},
                     "gpt4o_mini": {"response": "GPT-4o-Mini response content here", "latency": 0.3, "cost": 0.0000135, "input_tokens": 10, "output_tokens": 20},
